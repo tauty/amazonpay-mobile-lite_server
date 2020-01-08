@@ -119,6 +119,10 @@
                         </tbody>
                     </table>
 
+                    フリガナ(性)<input type="text" id="f_sei" name="f_sei" class="form-control"><br>
+                    フリガナ(名)<input type="text" id="f_mei" name="f_mei" class="form-control"><br>
+                    パスワード<input type="text" id="pwd" name="pwd" class="form-control"><br>
+
                     <div>
                         <div data-toggle="tooltip2" data-container="body" data-placement="top" data-html="true" title=""
                              data-original-title="&lt;p&gt;みなさまのECサイトへの会員登録・メールマガジンの購読をお勧めすることも可能です。&lt;/p&gt;">
@@ -135,6 +139,9 @@
                             </div>
                         </div>
                     </div>
+
+                    <a id="aaa" class="btn btn-info btn-lg btn-block" th:href="'https://amazon-pay-universallinks-test.s3-ap-northeast-1.amazonaws.com/index.html?token=' + ${token} + '&appToken=' + ${appToken}">購　入</a>
+                    <br>
 
                     <div>
                         <form method="post" action="purchase" id="purchase_form">
