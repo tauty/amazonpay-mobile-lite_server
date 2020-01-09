@@ -24,8 +24,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -196,7 +199,8 @@ public class AmazonPayController {
      * @return 画面生成templateの名前. "cart"の時、「./src/main/resources/templates/cart.html」
      */
     @GetMapping("/confirm_order")
-    public String confirmOrder(@CookieValue(required = false) String token, @CookieValue(required = false) String appToken, HttpServletResponse response, Model model) {
+    public String confirmOrder(@CookieValue(required = false) String token, @CookieValue(required = false) String appToken,
+                               HttpServletResponse response, Model model) {
         if (token == null) return "dummy"; // Chrome Custom Tabsが本URLを勝手にreloadすることがあるので、その対策.
         System.out.println("[confirm_order] token = " + token + ", appToken = " + appToken);
 
@@ -242,7 +246,6 @@ public class AmazonPayController {
         // Amazon Pay側のOrderReferenceの詳細情報の取得
         //--------------------------------------------
         GetOrderReferenceDetailsRequest request = new GetOrderReferenceDetailsRequest(orderReferenceId);
-        // request.setAddressConsentToken(paramMap.get("access_token")); // Note: It's old! should be removed!
         request.setAccessToken(accessToken);
         GetOrderReferenceDetailsResponseData response = client.getOrderReferenceDetails(request);
 
@@ -277,8 +280,9 @@ public class AmazonPayController {
      * @throws AmazonServiceException Amazon PayのAPIがthrowするエラー. 今回はサンプルなので特に何もしていないが、実際のコードでは正しく対処する.
      */
     @PostMapping("/purchase")
-    public String purchase(@RequestParam String token, @RequestParam String appToken, @RequestParam String accessToken, @RequestParam String orderReferenceId, Model model) throws AmazonServiceException {
-        System.out.println("[purchase] " + token + ", " + appToken + ", " + orderReferenceId + ", " + accessToken);
+    public String purchase(@RequestParam String token, @RequestParam String accessToken,
+                           @RequestParam String orderReferenceId, Model model) throws AmazonServiceException {
+        System.out.println("[purchase] " + token + ", " + orderReferenceId + ", " + accessToken);
 
         Order order = TokenUtil.get(token);
         order.orderReferenceId = orderReferenceId;
@@ -297,7 +301,7 @@ public class AmazonPayController {
         // Amazon Pay側のOrderReferenceの詳細情報の取得
         //--------------------------------------------
         GetOrderReferenceDetailsRequest request = new GetOrderReferenceDetailsRequest(orderReferenceId);
-        // request.setAddressConsentToken(paramMap.get("access_token")); // Note: It's old! should be removed!
+        // request.setAddressConsentToken(accessToken); // Note: It's old! should be removed!
         request.setAccessToken(accessToken);
         GetOrderReferenceDetailsResponseData response = client.getOrderReferenceDetails(request);
 
@@ -369,10 +373,9 @@ public class AmazonPayController {
         DatabaseMock.storeOrder(order);
 
         model.addAttribute("os", order.os);
-        model.addAttribute("token", token);
-        model.addAttribute("appToken", appToken);
+        model.addAttribute("order", order);
 
-        return "purchase";
+        return "thanks";
     }
 
     /**
