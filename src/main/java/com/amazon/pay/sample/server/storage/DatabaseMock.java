@@ -56,7 +56,10 @@ public class DatabaseMock {
         public long totalPrice;
         public String orderReferenceId;
         public String buyerName;
+        public String buyerFuriganaSei;
+        public String buyerFuriganaMei;
         public String buyerEmail;
+        public String buyerPwd;
         public String buyerPhone;
         public String destinationName;
         public String destinationPostalCode;

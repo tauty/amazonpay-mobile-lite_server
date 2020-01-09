@@ -281,8 +281,11 @@ public class AmazonPayController {
      */
     @PostMapping("/purchase")
     public String purchase(@RequestParam String token, @RequestParam String accessToken,
-                           @RequestParam String orderReferenceId, Model model) throws AmazonServiceException {
-        System.out.println("[purchase] " + token + ", " + orderReferenceId + ", " + accessToken);
+                           @RequestParam String orderReferenceId, @RequestParam String furiganaSei,
+                           @RequestParam String furiganaMei, @RequestParam String pwd,
+                           Model model) throws AmazonServiceException {
+        System.out.println("[purchase] " + token + ", " + orderReferenceId + ", " + accessToken +
+                ", " + furiganaSei + ", " + furiganaMei + ", " + pwd);
 
         Order order = TokenUtil.get(token);
         order.orderReferenceId = orderReferenceId;
@@ -311,7 +314,10 @@ public class AmazonPayController {
 
         // Amazon Pay側の受注詳細情報を、受注Objectに反映
         order.buyerName = emptyIfNull(response.getDetails().getBuyer().getName());
+        order.buyerFuriganaSei = furiganaSei;
+        order.buyerFuriganaMei = furiganaMei;
         order.buyerEmail = emptyIfNull(response.getDetails().getBuyer().getEmail());
+        order.buyerPwd = pwd;
         order.buyerPhone = emptyIfNull(response.getDetails().getBuyer().getPhone());
         order.destinationName = emptyIfNull(response.getDetails().getDestination().getPhysicalDestination().getName());
         order.destinationPhone = emptyIfNull(response.getDetails().getDestination().getPhysicalDestination().getPhone());

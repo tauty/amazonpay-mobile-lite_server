@@ -64,6 +64,14 @@
                             <td class="text-right" th:text="${order.myOrderId}">my-order-1234</td>
                         </tr>
                         <tr>
+                            <td>ご購入者様</td>
+                            <td class="text-right" th:text="${order.buyerName}">甘存　一平</td>
+                        </tr>
+                        <tr>
+                            <td>ご購入者様フリガナ</td>
+                            <td class="text-right" th:text="${order.buyerFuriganaSei + ' ' + order.buyerFuriganaMei}">アマゾン　イッペイ</td>
+                        </tr>
+                        <tr>
                             <td>お届け先氏名</td>
                             <td class="text-right" th:text="${order.destinationName}">甘存　一平</td>
                         </tr>
