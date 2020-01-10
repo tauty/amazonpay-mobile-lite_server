@@ -120,9 +120,15 @@
                     </table>
 
                     <form method="post" action="purchase" id="purchase_form">
-                        フリガナ(性)<input type="text" name="furiganaSei" class="requiredItem form-control"><br>
-                        フリガナ(名)<input type="text" name="furiganaMei" class="requiredItem form-control"><br>
-                        パスワード<input type="password" name="pwd" class="requiredItem form-control"><br>
+                        フリガナ(姓)<input type="text" id="furiganaSei" name="furiganaSei" class="requiredItem form-control" th:value="${order.buyerFuriganaSei}">
+                        <p id="furiganaSei_msg" class="text-danger" th:text="${order.buyerFuriganaSei_msg}"></p>
+                        <br>
+                        フリガナ(名)<input type="text" id="furiganaMei"name="furiganaMei" class="requiredItem form-control" th:value="${order.buyerFuriganaMei}">
+                        <p id="furiganaMei_msg" class="text-danger" th:text="${order.buyerFuriganaMei_msg}"></p>
+                        <br>
+                        パスワード<input type="password" id="pwd" name="pwd" class="requiredItem form-control" th:value="${order.buyerPwd}">
+                        <p id="pwd_msg" class="text-danger" th:text="${order.buyerPwd_msg}"></p>
+                        <br>
 
                         <div>
                             <div data-toggle="tooltip2" data-container="body" data-placement="top" data-html="true"

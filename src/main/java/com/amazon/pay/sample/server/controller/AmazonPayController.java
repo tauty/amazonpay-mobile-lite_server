@@ -248,11 +248,50 @@ public class AmazonPayController {
                            @RequestParam String orderReferenceId, @RequestParam String furiganaSei,
                            @RequestParam String furiganaMei, @RequestParam String pwd,
                            Model model) throws AmazonServiceException {
+        if("OK".equals(purchaseRest(token, accessToken, orderReferenceId, furiganaSei, furiganaMei, pwd))) {
+            Order order = TokenUtil.get(token);
+
+            model.addAttribute("env", order.env);
+            model.addAttribute("order", order);
+
+            return "thanks";
+        } else {
+            return "redirect:/button?token=" + token;
+        }
+    }
+
+    @ResponseBody
+    @PostMapping("/purchase_rest")
+    public String purchaseRest(@RequestParam String token, @RequestParam String accessToken,
+                           @RequestParam String orderReferenceId, @RequestParam String furiganaSei,
+                           @RequestParam String furiganaMei, @RequestParam String pwd) throws AmazonServiceException {
         System.out.println("[purchase] " + token + ", " + orderReferenceId + ", " + accessToken +
                 ", " + furiganaSei + ", " + furiganaMei + ", " + pwd);
 
         Order order = TokenUtil.get(token);
         order.orderReferenceId = orderReferenceId;
+
+        boolean isAllValid = true;
+        order.buyerFuriganaSei_msg = order.buyerFuriganaMei_msg = order.buyerPwd_msg = "";
+        order.buyerFuriganaSei = furiganaSei;
+        if(!furiganaSei.matches("([ァ-ン]|ー)+")) {
+            isAllValid = false;
+            order.buyerFuriganaSei_msg = "全角カタカナです!";
+        }
+        order.buyerFuriganaMei = furiganaMei;
+        if(!furiganaMei.matches("([ァ-ン]|ー)+")) {
+            isAllValid = false;
+            order.buyerFuriganaMei_msg = "全角カタカナです!";
+        }
+        order.buyerPwd = pwd;
+        if(pwd.equals("password")) {
+            isAllValid = false;
+            order.buyerPwd_msg = "簡単すぎます!";
+        }
+        if(!isAllValid) {
+            DatabaseMock.storeOrder(order);
+            return "NG";
+        }
 
         Config config = new PayConfig()
                 .withSellerId(sellerId)
@@ -278,10 +317,7 @@ public class AmazonPayController {
 
         // Amazon Pay側の受注詳細情報を、受注Objectに反映
         order.buyerName = emptyIfNull(response.getDetails().getBuyer().getName());
-        order.buyerFuriganaSei = furiganaSei;
-        order.buyerFuriganaMei = furiganaMei;
         order.buyerEmail = emptyIfNull(response.getDetails().getBuyer().getEmail());
-        order.buyerPwd = pwd;
         order.buyerPhone = emptyIfNull(response.getDetails().getBuyer().getPhone());
         order.destinationName = emptyIfNull(response.getDetails().getDestination().getPhysicalDestination().getName());
         order.destinationPhone = emptyIfNull(response.getDetails().getDestination().getPhysicalDestination().getPhone());
@@ -342,10 +378,7 @@ public class AmazonPayController {
         order.myOrderStatus = "AUTHORIZED";
         DatabaseMock.storeOrder(order);
 
-        model.addAttribute("env", order.env);
-        model.addAttribute("order", order);
-
-        return "thanks";
+        return "OK";
     }
 
     /**
