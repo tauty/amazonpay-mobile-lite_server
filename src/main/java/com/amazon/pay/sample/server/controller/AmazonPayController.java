@@ -62,36 +62,15 @@ public class AmazonPayController {
      * 受注入力情報画面を表示.
      *
      * @param env   アクセス元の環境. android/ios/ios-ui/browser のどれか
-     * @return 画面生成templateの名前. "cart"の時、「./src/main/resources/templates/cart.html」
+     * @return 画面生成templateの名前. "order"の時、「./src/main/resources/templates/order.html」
      */
     @GetMapping("/{env}/order")
-    public String order(@PathVariable String env) {
+    public String order(@PathVariable String env, Model model) {
         System.out.println("[order] " + env);
-        return "order";
-    }
 
-    /**
-     * order.htmlから呼び出されて、受注Objectを生成・保存する.
-     *
-     * @param env   アクセス元の環境. android/ios/ios-ui/browser のどれか
-     * @param hd8   Kindle File HD8の購入数
-     * @param hd10  Kindle File HD10の購入数
-     * @param model 画面生成templateに渡す値を設定するObject
-     * @return 画面生成templateの名前. "cart"の時、「./src/main/resources/templates/cart.html」
-     */
-    @PostMapping("/{env}/create_order")
-    public String createOrder(@PathVariable String env, @RequestParam int hd8, @RequestParam int hd10, Model model) {
-        System.out.println("[createOrder] " + env + ", " + hd8 + ", " + hd10);
-
-        // 受注Objectの生成
-        String token = doCreateOrder(!env.contains("-") ? env : env.substring(0, env.indexOf('-')), hd8, hd10);
-
-        // 画面生成templateへの値の受け渡し
         model.addAttribute("env", env);
-        model.addAttribute("token", token);
-        model.addAttribute("order", TokenUtil.get(token));
 
-        return "cart";
+        return "order";
     }
 
     /**
@@ -141,7 +120,7 @@ public class AmazonPayController {
      * @param token    受注Objectへのアクセス用token
      * @param response responseオブジェクト
      * @param model    画面生成templateに渡す値を設定するObject
-     * @return 画面生成templateの名前. "cart"の時、「./src/main/resources/templates/cart.html」
+     * @return 画面生成templateの名前. "order"の時、「./src/main/resources/templates/order.html」
      */
     @GetMapping("/button")
     public String button(@RequestParam String token, HttpServletResponse response, Model model) {
@@ -152,7 +131,7 @@ public class AmazonPayController {
 
         // redirect処理でconfirm_orderに戻ってきたときにtokenが使用できるよう、Cookieに登録
         // Note: Session Fixation 対策に、tokenをこのタイミングで更新する.
-        Cookie cookie = new Cookie("token", TokenUtil.copy(token));
+        Cookie cookie = new Cookie("token", TokenUtil.move(token));
         cookie.setSecure(true);
         response.addCookie(cookie);
 
@@ -179,7 +158,7 @@ public class AmazonPayController {
      * @param token    受注Objectへのアクセス用token
      * @param response responseオブジェクト
      * @param model    画面生成templateに渡す値を設定するObject
-     * @return 画面生成templateの名前. "cart"の時、「./src/main/resources/templates/cart.html」
+     * @return 画面生成templateの名前. "order"の時、「./src/main/resources/templates/order.html」
      */
     @GetMapping("/confirm_order")
     public String confirmOrder(@CookieValue(required = false) String token, @CookieValue(required = false) String appToken,
@@ -261,7 +240,7 @@ public class AmazonPayController {
      * @param accessToken      Amazon Pay側の情報にアクセスするためのToken. ボタンWidgetクリック時に取得する.
      * @param orderReferenceId Amazon Pay側の受注管理番号.
      * @param model            画面生成templateに渡す値を設定するObject
-     * @return 画面生成templateの名前. "cart"の時、「./src/main/resources/templates/cart.html」
+     * @return 画面生成templateの名前. "order"の時、「./src/main/resources/templates/order.html」
      * @throws AmazonServiceException Amazon PayのAPIがthrowするエラー. 今回はサンプルなので特に何もしていないが、実際のコードでは正しく対処する.
      */
     @PostMapping("/purchase")
@@ -374,7 +353,7 @@ public class AmazonPayController {
      *
      * @param token 受注Objectへのアクセス用token
      * @param model 画面生成templateに渡す値を設定するObject
-     * @return 画面生成templateの名前. "cart"の時、「./src/main/resources/templates/cart.html」
+     * @return 画面生成templateの名前. "order"の時、「./src/main/resources/templates/order.html」
      */
     @PostMapping("/thanks")
     public String thanks(@RequestParam String token, Model model) {
@@ -390,7 +369,7 @@ public class AmazonPayController {
     /**
      * Thanks画面Activity内のWebViewから呼び出されて、受注Objectの詳細情報を表示する.
      *
-     * @return 画面生成templateの名前. "cart"の時、「./src/main/resources/templates/cart.html」
+     * @return 画面生成templateの名前. "order"の時、「./src/main/resources/templates/order.html」
      */
     @PostMapping("/error")
     @GetMapping("/error")

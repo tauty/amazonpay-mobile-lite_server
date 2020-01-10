@@ -46,8 +46,8 @@ public class TokenUtil {
      * @param token 受注Objectアクセス用のtoken
      * @return コピーされた受注Objectアクセス用token
      */
-    public static String copy(String token) {
-        return storeByToken(CacheMock.get(token).clone());
+    public static String move(String token) {
+        return storeByToken(CacheMock.remove(token));
     }
 
     /**

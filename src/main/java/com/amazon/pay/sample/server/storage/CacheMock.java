@@ -29,4 +29,10 @@ public class CacheMock {
     public static void put(String key, DatabaseMock.Order value) {
         cache.put(key, value);
     }
+
+    public static DatabaseMock.Order remove(String key) {
+        DatabaseMock.Order order = cache.getIfPresent(key);
+        cache.invalidate(key);
+        return order;
+    }
 }
