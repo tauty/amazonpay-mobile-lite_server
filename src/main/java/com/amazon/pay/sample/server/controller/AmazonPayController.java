@@ -61,7 +61,7 @@ public class AmazonPayController {
     /**
      * 受注入力情報画面を表示.
      *
-     * @param env   アクセス元の環境. android/ios/ios-ui/browser のどれか
+     * @param env アクセス元の環境. android/ios/ios-ui/browser のどれか
      * @return 画面生成templateの名前. "order"の時、「./src/main/resources/templates/order.html」
      */
     @GetMapping("/{env}/order")
@@ -74,9 +74,9 @@ public class AmazonPayController {
     }
 
     /**
-     * NATIVEの受註登録画面から呼び出されて、受注Objectを生成・保存する.
+     * 受注入力情報画面から呼び出されて、受注Objectを生成・保存する.
      *
-     * @param env   アクセス元の環境. android/ios/ios-ui/browser のどれか
+     * @param env  アクセス元の環境. android/ios/ios-ui/browser のどれか
      * @param hd8  Kindle File HD8の購入数
      * @param hd10 Kindle File HD10の購入数
      * @return 受注Objectへのアクセス用token
@@ -126,30 +126,16 @@ public class AmazonPayController {
     public String button(@RequestParam String token, HttpServletResponse response, Model model) {
         System.out.println("[button] token: " + token);
 
-        // tokenが削除済みの場合(購入処理後、「戻る」で戻ってきてAmazonPayボタンがクリックされた場合)、エラーとする.
-        if (!TokenUtil.exists(token)) return "error";
-
         // redirect処理でconfirm_orderに戻ってきたときにtokenが使用できるよう、Cookieに登録
         // Note: Session Fixation 対策に、tokenをこのタイミングで更新する.
-        Cookie cookie = new Cookie("token", TokenUtil.move(token));
-        cookie.setSecure(true);
-        response.addCookie(cookie);
-
+        addCookie(response, "token", TokenUtil.move(token));
         // 更新前のtokenも、APPに戻ったタイミングでの確認用に保持する
-        cookie = new Cookie("appToken", token);
-        cookie.setSecure(true);
-        response.addCookie(cookie);
+        addCookie(response, "appToken", token);
 
         model.addAttribute("clientId", clientId);
         model.addAttribute("sellerId", sellerId);
 
         return "button";
-    }
-
-    private void removeCookie(HttpServletResponse response, String key) {
-        Cookie cookie = new Cookie(key, "");
-        cookie.setMaxAge(0);
-        response.addCookie(cookie);
     }
 
     /**
@@ -239,6 +225,9 @@ public class AmazonPayController {
      * @param token            受注Objectへのアクセス用token
      * @param accessToken      Amazon Pay側の情報にアクセスするためのToken. ボタンWidgetクリック時に取得する.
      * @param orderReferenceId Amazon Pay側の受注管理番号.
+     * @param furiganaSei      ユーザが画面で入力した姓のフリガナ
+     * @param furiganaMei      ユーザが画面で入力した名のフリガナ
+     * @param pwd              ユーザが画面で入力したパスワード
      * @param model            画面生成templateに渡す値を設定するObject
      * @return 画面生成templateの名前. "order"の時、「./src/main/resources/templates/order.html」
      * @throws AmazonServiceException Amazon PayのAPIがthrowするエラー. 今回はサンプルなので特に何もしていないが、実際のコードでは正しく対処する.
@@ -248,7 +237,7 @@ public class AmazonPayController {
                            @RequestParam String orderReferenceId, @RequestParam String furiganaSei,
                            @RequestParam String furiganaMei, @RequestParam String pwd,
                            Model model) throws AmazonServiceException {
-        if("OK".equals(purchaseRest(token, accessToken, orderReferenceId, furiganaSei, furiganaMei, pwd))) {
+        if ("OK".equals(purchaseRest(token, accessToken, orderReferenceId, furiganaSei, furiganaMei, pwd))) {
             Order order = TokenUtil.get(token);
 
             model.addAttribute("env", order.env);
@@ -256,43 +245,62 @@ public class AmazonPayController {
 
             return "thanks";
         } else {
+            // validation errorのとき、元の画面に戻ってエラーを表示する
             return "redirect:/button?token=" + token;
         }
     }
 
+    /**
+     * 購入確定画面から呼び出されて、購入処理を実行する.
+     *
+     * @param token            受注Objectへのアクセス用token
+     * @param accessToken      Amazon Pay側の情報にアクセスするためのToken. ボタンWidgetクリック時に取得する.
+     * @param orderReferenceId Amazon Pay側の受注管理番号.
+     * @param furiganaSei      ユーザが画面で入力した姓のフリガナ
+     * @param furiganaMei      ユーザが画面で入力した名のフリガナ
+     * @param pwd              ユーザが画面で入力したパスワード
+     * @return 処理が成功したとき: 'OK', 失敗したとき: 'NG'
+     * @throws AmazonServiceException Amazon PayのAPIがthrowするエラー. 今回はサンプルなので特に何もしていないが、実際のコードでは正しく対処する.
+     */
     @ResponseBody
     @PostMapping("/purchase_rest")
     public String purchaseRest(@RequestParam String token, @RequestParam String accessToken,
-                           @RequestParam String orderReferenceId, @RequestParam String furiganaSei,
-                           @RequestParam String furiganaMei, @RequestParam String pwd) throws AmazonServiceException {
+                               @RequestParam String orderReferenceId, @RequestParam String furiganaSei,
+                               @RequestParam String furiganaMei, @RequestParam String pwd) throws AmazonServiceException {
         System.out.println("[purchase] " + token + ", " + orderReferenceId + ", " + accessToken +
                 ", " + furiganaSei + ", " + furiganaMei + ", " + pwd);
 
         Order order = TokenUtil.get(token);
         order.orderReferenceId = orderReferenceId;
 
+        //---------------------
+        // Validation Check
+        //---------------------
         boolean isAllValid = true;
         order.buyerFuriganaSei_msg = order.buyerFuriganaMei_msg = order.buyerPwd_msg = "";
         order.buyerFuriganaSei = furiganaSei;
-        if(!furiganaSei.matches("([ァ-ン]|ー)+")) {
+        if (!furiganaSei.matches("([ァ-ン]|ー)+")) {
             isAllValid = false;
             order.buyerFuriganaSei_msg = "全角カタカナです!";
         }
         order.buyerFuriganaMei = furiganaMei;
-        if(!furiganaMei.matches("([ァ-ン]|ー)+")) {
+        if (!furiganaMei.matches("([ァ-ン]|ー)+")) {
             isAllValid = false;
             order.buyerFuriganaMei_msg = "全角カタカナです!";
         }
         order.buyerPwd = pwd;
-        if(pwd.equals("password")) {
+        if (pwd.equals("password")) {
             isAllValid = false;
             order.buyerPwd_msg = "簡単すぎます!";
         }
-        if(!isAllValid) {
+        if (!isAllValid) {
             DatabaseMock.storeOrder(order);
             return "NG";
         }
 
+        //--------------------------------------------
+        // Amazon Pay側のOrderReferenceの詳細情報の取得
+        //--------------------------------------------
         Config config = new PayConfig()
                 .withSellerId(sellerId)
                 .withAccessKey(accessKey)
@@ -303,9 +311,6 @@ public class AmazonPayController {
 
         Client client = new PayClient(config);
 
-        //--------------------------------------------
-        // Amazon Pay側のOrderReferenceの詳細情報の取得
-        //--------------------------------------------
         GetOrderReferenceDetailsRequest request = new GetOrderReferenceDetailsRequest(orderReferenceId);
         // request.setAddressConsentToken(accessToken); // Note: It's old! should be removed!
         request.setAccessToken(accessToken);
@@ -382,7 +387,7 @@ public class AmazonPayController {
     }
 
     /**
-     * Thanks画面Activity内のWebViewから呼び出されて、受注Objectの詳細情報を表示する.
+     * Thanks画面で、受注Objectの詳細情報を表示する.
      *
      * @param token 受注Objectへのアクセス用token
      * @param model 画面生成templateに渡す値を設定するObject
@@ -400,7 +405,7 @@ public class AmazonPayController {
     }
 
     /**
-     * Thanks画面Activity内のWebViewから呼び出されて、受注Objectの詳細情報を表示する.
+     * エラー画面.
      *
      * @return 画面生成templateの名前. "order"の時、「./src/main/resources/templates/order.html」
      */
@@ -410,6 +415,18 @@ public class AmazonPayController {
         System.out.println("[error] ");
 
         return "error";
+    }
+
+    private void addCookie(HttpServletResponse response, String key, String value) {
+        Cookie cookie = new Cookie(key, value);
+        cookie.setSecure(true);
+        response.addCookie(cookie);
+    }
+
+    private void removeCookie(HttpServletResponse response, String key) {
+        Cookie cookie = new Cookie(key, "");
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
     }
 
     private String generateId() {

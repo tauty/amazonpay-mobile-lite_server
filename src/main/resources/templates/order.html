@@ -94,10 +94,6 @@
         // CallbackのWebViewController#userContentControllerを起動する.
         [( ${env} == 'ios'     ? 'webkit.messageHandlers.jsCallbackHandler.postMessage(token);' )]
 
-        // iOS - UIWebView版: AmazonPayController#createOrderから受け取ったtokenを埋め込んで、Custom URL Scheme(ディープリンク)を送信して、
-        // AppDelegate#applicationを起動する.
-        [( ${env} == 'ios-ui'  ? 'location.href = "amazonpay-mobile-sample-ios://ui-to-safari-view/?token=" + token;' )]
-
         // PC: 通常の画面遷移
         [( ${env} == 'browser' ? 'location.href = "../button?token=" + token;' )]
     }

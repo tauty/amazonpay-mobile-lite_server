@@ -15,17 +15,16 @@
     <!-- Custom styles for this template -->
     <link href="./css/shop-confirmation.css" rel="stylesheet">
     <script type="text/javascript">
-      function getURLParameter(name, source) {
-          return decodeURIComponent((new RegExp('[?|&amp;|#]' + name + '=' +
-                          '([^&;]+?)(&|#|;|$)').exec(source) || [, ""])[1].replace(/\+/g, '%20')) || null;
-      }
+        function getURLParameter(name, source) {
+            return decodeURIComponent((new RegExp('[?|&amp;|#]' + name + '=' +
+                '([^&;]+?)(&|#|;|$)').exec(source) || [, ""])[1].replace(/\+/g, '%20')) || null;
+        }
 
-      var error = getURLParameter("error", location.search);
-      if (typeof error === 'string' && error.match(/^access_denied/)) {
-        console.log('Amazonアカウントでのサインインをキャンセルされたため、戻る');
-        window.location.href = 'error.html';
-      }
-
+        var error = getURLParameter("error", location.search);
+        if (typeof error === 'string' && error.match(/^access_denied/)) {
+            console.log('Amazonアカウントでのサインインをキャンセルされたため、戻る');
+            window.location.href = 'error.html';
+        }
     </script>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
@@ -180,12 +179,6 @@
 <script type="text/javascript">
 
     let fields = document.getElementsByClassName('requiredItem');
-    function isAllNotEmpty() {
-        for(let i = 0; i < fields.length; i++) {
-            if(fields[i].value === '') return false;
-        }
-        return true;
-    }
     for(let i = 0; i < fields.length; i++) {
         fields[i].addEventListener('input', function(e) {
             if(e.target.value === '') {
@@ -210,23 +203,25 @@
     }
 
     function activateIfOK(callback) {
-        if(isAddressReady && isWalletReady && isAllNotEmpty()) {
+        if(isAddressReady && isWalletReady && isAllValid()) {
             if(callback) callback();
             [( ${env} == 'ios'     ? 'document.getElementById("purchase_button").style = "display:none;"; document.getElementById("purchase_link").style = "";' )]
             [( ${env} == 'browser' ? 'document.getElementById("purchase_button").disabled = false;' )]
         }
     }
 
+    function isAllValid() {
+        for(let i = 0; i < fields.length; i++) {
+            if(fields[i].value === '') return false;
+        }
+        return true;
+    }
+
     var accessToken = getURLParameter("access_token", location.hash);
     if (typeof accessToken === 'string' && accessToken.match(/^Atza/)) {
         console.log("Amazon Access Token :" + accessToken);
         document.cookie = "amazon_Login_accessToken=" + accessToken + ";path=/;secure";
-    }
-
-    // server側でエラー検出された場合など再度本画面に戻ってくる場合を想定し、あえてaccessTokenをcookieから取得する
-    let extractedAccessTokenResults = /(^|;\s*)amazon_Login_accessToken=([^;]+?)(;|$)/.exec(document.cookie);
-    if ( extractedAccessTokenResults ) {
-        document.getElementById('access_token').value = extractedAccessTokenResults[2];
+        document.getElementById('access_token').value = accessToken;
     }
 
     let isAddressReady = false;
@@ -243,8 +238,8 @@
     };
 
     function showAddressBookWidget() {
-          // AddressBook
-          new OffAmazonPayments.Widgets.AddressBook({
+        // AddressBook
+        new OffAmazonPayments.Widgets.AddressBook({
             // AmazonPayController#confirmOrderから受け取ったsellerIdの情報を埋め込む
             sellerId: '[[${sellerId}]]',
 
@@ -292,56 +287,56 @@
                 // @see https://developer.amazon.com/ja/docs/amazon-pay-onetime/handling-widget-errors.html
                 console.log('OffAmazonPayments.Widgets.AddressBook', error.getErrorCode(), error.getErrorMessage());
                 switch (error.getErrorCode()) {
-                  case 'AddressNotModifiable':
-                      // オーダーリファレンスIDのステータスが正しくない場合は、お届け先の住所を変更することができません。
-                      break;
-                  case 'BuyerNotAssociated':
-                      // 購入者とリファレンスIDが正しく関連付けられていません。
-              　　　    // ウィジェットを表示する前に購入者はログインする必要があります。
-                      break;
-                  case 'BuyerSessionExpired':
-                      // 購入者のセッションの有効期限が切れました。
-         　　　　        // ウィジェットを表示する前に購入者はログインする必要があります。
-                      break;
-                  case 'InvalidAccountStatus':
-                      // マーチャントID（セラーID）がリクエストを実行する為に適切な状態ではありません。
-        　　　　         // 考えられる理由 ： 制限がかかっているか、正しく登録が完了されていません。
-                      break;
-                  case 'InvalidOrderReferenceId':
-                      // オーダーリファレンスIDが正しくありません。
-                      break;
-                  case 'InvalidParameterValue':
-                      // 指定されたパラメータの値が正しくありません。
-                      break;
-                  case 'InvalidSellerId':
-                      // マーチャントID（セラーID）が正しくありません。
-                      break;
-                  case 'MissingParameter':
-                      // 指定されたパラメータが正しくありません。
-                      break;
-                  case 'PaymentMethodNotModifiable':
-                      // オーダーリファレンスIDのステータスが正しくない場合はお支払い方法を変更することができません。
-                      break;
-                  case 'ReleaseEnvironmentMismatch':
-                      // 使用しているオーダーリファレンスオブジェクトがリリース環境と一致しません。
-                      break;
-                  case 'StaleOrderReference':
-                      // 使用しているオーダーリファレンスIDがキャンセルされています。
-                  　　　// キャンセルされたオーダーリファレンスIDでウィジェットを関連付けすることはできません。
-                      break;
-                  case 'UnknownError':
-                      // 不明なエラーが発生しました。(UnknownError)
-                      break;
-                  default:
-                      // 不明なエラーが発生しました。
+                case 'AddressNotModifiable':
+                    // オーダーリファレンスIDのステータスが正しくない場合は、お届け先の住所を変更することができません。
+                    break;
+                case 'BuyerNotAssociated':
+                    // 購入者とリファレンスIDが正しく関連付けられていません。
+                    // ウィジェットを表示する前に購入者はログインする必要があります。
+                    break;
+                case 'BuyerSessionExpired':
+                    // 購入者のセッションの有効期限が切れました。
+                    // ウィジェットを表示する前に購入者はログインする必要があります。
+                    break;
+                case 'InvalidAccountStatus':
+                    // マーチャントID（セラーID）がリクエストを実行する為に適切な状態ではありません。
+                    // 考えられる理由 ： 制限がかかっているか、正しく登録が完了されていません。
+                    break;
+                case 'InvalidOrderReferenceId':
+                    // オーダーリファレンスIDが正しくありません。
+                    break;
+                case 'InvalidParameterValue':
+                    // 指定されたパラメータの値が正しくありません。
+                    break;
+                case 'InvalidSellerId':
+                    // マーチャントID（セラーID）が正しくありません。
+                    break;
+                case 'MissingParameter':
+                    // 指定されたパラメータが正しくありません。
+                    break;
+                case 'PaymentMethodNotModifiable':
+                    // オーダーリファレンスIDのステータスが正しくない場合はお支払い方法を変更することができません。
+                    break;
+                case 'ReleaseEnvironmentMismatch':
+                    // 使用しているオーダーリファレンスオブジェクトがリリース環境と一致しません。
+                    break;
+                case 'StaleOrderReference':
+                    // 使用しているオーダーリファレンスIDがキャンセルされています。
+                    // キャンセルされたオーダーリファレンスIDでウィジェットを関連付けすることはできません。
+                    break;
+                case 'UnknownError':
+                    // 不明なエラーが発生しました。(UnknownError)
+                    break;
+                default:
+                    // 不明なエラーが発生しました。
                 }
             }
-          }).bind("addressBookWidgetDiv");
-      }
+        }).bind("addressBookWidgetDiv");
+    }
 
-      function showWalletWidget(orderReferenceId) {
-          // Wallet
-          new OffAmazonPayments.Widgets.Wallet({
+    function showWalletWidget(orderReferenceId) {
+        // Wallet
+        new OffAmazonPayments.Widgets.Wallet({
             // AmazonPayController#confirmOrderから受け取ったsellerIdの情報を埋め込む
             sellerId: '[[${sellerId}]]',
             amazonOrderReferenceId: orderReferenceId,
@@ -363,18 +358,16 @@
                 // @see https://developer.amazon.com/ja/docs/amazon-pay-onetime/handling-widget-errors.html
                 console.log('OffAmazonPayments.Widgets.Wallet', error.getErrorCode(), error.getErrorMessage());
             }
-          }).bind("walletWidgetDiv");
-      }
+        }).bind("walletWidgetDiv");
+    }
 
-      document.getElementById('purchase_button').addEventListener(
-          'click',
-          function() {
-              this.disabled = true;
-              document.getElementById('purchase_form').submit();
-          }
-      );
-
-
+    document.getElementById('purchase_button').addEventListener(
+        'click',
+        function() {
+            this.disabled = true;
+            document.getElementById('purchase_form').submit();
+        }
+    );
 
 </script>
 

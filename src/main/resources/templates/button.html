@@ -45,37 +45,37 @@
 
 <!-- Amazon Pay JavaScript -->
 <script type="text/javascript">
-      window.onAmazonLoginReady = function() {
-        amazon.Login.setClientId("[[${clientId}]]"); //
+    window.onAmazonLoginReady = function() {
+        amazon.Login.setClientId("[[${clientId}]]");
         amazon.Login.setUseCookie(true);
-      };
+    };
 
-      window.onAmazonPaymentsReady = function() {
+    window.onAmazonPaymentsReady = function() {
         showLoginButton();
         setTimeout(clickLoginButton, 0);
-      };
+    };
 
-      function showLoginButton() {
-          var authRequest;
-          OffAmazonPayments.Button("AmazonPayButton", "[[${sellerId}]]", {
+    function showLoginButton() {
+        var authRequest;
+        OffAmazonPayments.Button("AmazonPayButton", "[[${sellerId}]]", {
             type:  "PwA",
             color: "Gold",
             size:  "x-large",
 
             authorization: function() {
-              loginOptions = {scope: "profile payments:widget payments:shipping_address", popup: false};
-              authRequest = amazon.Login.authorize (loginOptions, "confirm_order");
+                loginOptions = {scope: "profile payments:widget payments:shipping_address", popup: false};
+                authRequest = amazon.Login.authorize (loginOptions, "confirm_order");
             },
             onError: function(error) {
                 console.log(error.getErrorCode());
                 console.log(error.getErrorMessage());
             }
-          });
-      }
-      function clickLoginButton() {
-          document.getElementById("OffAmazonPaymentsWidgets0").click();
-      }
+        });
+    }
 
+    function clickLoginButton() {
+        document.getElementById("OffAmazonPaymentsWidgets0").click();
+    }
 </script>
 <script async="async"
         src='https://static-fe.payments-amazon.com/OffAmazonPayments/jp/sandbox/lpa/js/Widgets.js'></script>
