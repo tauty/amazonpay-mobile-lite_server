@@ -24,11 +24,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -64,38 +61,33 @@ public class AmazonPayController {
     /**
      * 受注入力情報画面を表示.
      *
-     * @param os    アクセス元のOS. android/ios/pc のどれか
-     * @param model 画面生成templateに渡す値を設定するObject
+     * @param env   アクセス元の環境. android/ios/ios-ui/browser のどれか
      * @return 画面生成templateの名前. "cart"の時、「./src/main/resources/templates/cart.html」
      */
-    @GetMapping("/{os}/order")
-    public String order(@PathVariable String os, Model model) {
-        System.out.println("[order] " + os);
-
-        // 画面生成templateへの値の受け渡し
-        model.addAttribute("os", os);
-
+    @GetMapping("/{env}/order")
+    public String order(@PathVariable String env) {
+        System.out.println("[order] " + env);
         return "order";
     }
 
     /**
      * order.htmlから呼び出されて、受注Objectを生成・保存する.
      *
-     * @param os    アクセス元のOS. android/ios/pc のどれか
+     * @param env   アクセス元の環境. android/ios/ios-ui/browser のどれか
      * @param hd8   Kindle File HD8の購入数
      * @param hd10  Kindle File HD10の購入数
      * @param model 画面生成templateに渡す値を設定するObject
      * @return 画面生成templateの名前. "cart"の時、「./src/main/resources/templates/cart.html」
      */
-    @PostMapping("/{os}/create_order")
-    public String createOrder(@PathVariable String os, @RequestParam int hd8, @RequestParam int hd10, Model model) {
-        System.out.println("[createOrder] " + os + ", " + hd8 + ", " + hd10);
+    @PostMapping("/{env}/create_order")
+    public String createOrder(@PathVariable String env, @RequestParam int hd8, @RequestParam int hd10, Model model) {
+        System.out.println("[createOrder] " + env + ", " + hd8 + ", " + hd10);
 
         // 受注Objectの生成
-        String token = doCreateOrder(!os.contains("-") ? os : os.substring(0, os.indexOf('-')), hd8, hd10);
+        String token = doCreateOrder(!env.contains("-") ? env : env.substring(0, env.indexOf('-')), hd8, hd10);
 
         // 画面生成templateへの値の受け渡し
-        model.addAttribute("os", os);
+        model.addAttribute("env", env);
         model.addAttribute("token", token);
         model.addAttribute("order", TokenUtil.get(token));
 
@@ -105,23 +97,23 @@ public class AmazonPayController {
     /**
      * NATIVEの受註登録画面から呼び出されて、受注Objectを生成・保存する.
      *
-     * @param os    アクセス元のOS. android/ios/pc のどれか
+     * @param env   アクセス元の環境. android/ios/ios-ui/browser のどれか
      * @param hd8  Kindle File HD8の購入数
      * @param hd10 Kindle File HD10の購入数
      * @return 受注Objectへのアクセス用token
      */
     @ResponseBody
-    @PostMapping("/{os}/create_order_rest")
-    public String createOrderREST(@PathVariable String os, @RequestParam int hd8, @RequestParam int hd10) {
-        System.out.println("[createOrderREST] " + os + ", " + hd8 + ", " + hd10);
-        return doCreateOrder(os, hd8, hd10);
+    @PostMapping("/{env}/create_order_rest")
+    public String createOrderREST(@PathVariable String env, @RequestParam int hd8, @RequestParam int hd10) {
+        System.out.println("[createOrderREST] " + env + ", " + hd8 + ", " + hd10);
+        return doCreateOrder(env, hd8, hd10);
     }
 
-    private String doCreateOrder(String os, int hd8, int hd10) {
+    private String doCreateOrder(String env, int hd8, int hd10) {
 
         // 受注Objectの生成/更新
         Order order = new Order();
-        order.os = os;
+        order.env = env;
         order.items = new ArrayList<>();
         if (hd8 > 0) {
             order.items.add(new Item("item0008", "Fire HD8", hd8, 8980));
@@ -152,9 +144,8 @@ public class AmazonPayController {
      * @return 画面生成templateの名前. "cart"の時、「./src/main/resources/templates/cart.html」
      */
     @GetMapping("/button")
-    public String button(@RequestParam String token, @RequestParam(required = false) String mode,
-                         @RequestParam(required = false) String showWidgets, HttpServletResponse response, Model model) {
-        System.out.println("[button] mode: " + mode + ", token: " + token + ", showWidgets: " + showWidgets);
+    public String button(@RequestParam String token, HttpServletResponse response, Model model) {
+        System.out.println("[button] token: " + token);
 
         // tokenが削除済みの場合(購入処理後、「戻る」で戻ってきてAmazonPayボタンがクリックされた場合)、エラーとする.
         if (!TokenUtil.exists(token)) return "error";
@@ -170,14 +161,6 @@ public class AmazonPayController {
         cookie.setSecure(true);
         response.addCookie(cookie);
 
-        // widget表示・非表示フラグ(mode=appの確認画面で、「送付先・支払い方法変更」ボタン押下時)
-        if(showWidgets != null) {
-            cookie = new Cookie("showWidgets", "true");
-            cookie.setSecure(true);
-            response.addCookie(cookie);
-        }
-
-        model.addAttribute("mode", mode);
         model.addAttribute("clientId", clientId);
         model.addAttribute("sellerId", sellerId);
 
@@ -208,9 +191,11 @@ public class AmazonPayController {
         removeCookie(response, "token");
         removeCookie(response, "appToken");
 
+        Order order = TokenUtil.get(token);
+        model.addAttribute("order", order);
+        model.addAttribute("env", order.env);
         model.addAttribute("token", token);
         model.addAttribute("appToken", appToken);
-        model.addAttribute("order", TokenUtil.get(token));
         model.addAttribute("clientId", clientId);
         model.addAttribute("sellerId", sellerId);
 
@@ -378,7 +363,7 @@ public class AmazonPayController {
         order.myOrderStatus = "AUTHORIZED";
         DatabaseMock.storeOrder(order);
 
-        model.addAttribute("os", order.os);
+        model.addAttribute("env", order.env);
         model.addAttribute("order", order);
 
         return "thanks";
@@ -397,7 +382,7 @@ public class AmazonPayController {
 
         Order order = TokenUtil.get(token);
         model.addAttribute("order", order);
-        model.addAttribute("os", order.os);
+        model.addAttribute("env", order.env);
 
         return "thanks";
     }

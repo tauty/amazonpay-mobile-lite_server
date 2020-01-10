@@ -26,7 +26,6 @@
         window.location.href = 'error.html';
       }
 
-
     </script>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
@@ -200,15 +199,15 @@
     }
 
     function inactivate() {
-        document.getElementById('purchase_button').style = '';
-        document.getElementById('purchase_link').style = 'display:none;';
+        [( ${env} == 'ios'     ? 'document.getElementById("purchase_button").style = ""; document.getElementById("purchase_link").style = "display:none;";' )]
+        [( ${env} == 'browser' ? 'document.getElementById("purchase_button").disabled = true;' )]
     }
 
     function activateIfOK(callback) {
         if(isAddressReady && isWalletReady && isAllNotEmpty()) {
             if(callback) callback();
-            document.getElementById('purchase_button').style = 'display:none;';
-            document.getElementById('purchase_link').style = '';
+            [( ${env} == 'ios'     ? 'document.getElementById("purchase_button").style = "display:none;"; document.getElementById("purchase_link").style = "";' )]
+            [( ${env} == 'browser' ? 'document.getElementById("purchase_button").disabled = false;' )]
         }
     }
 
@@ -216,7 +215,12 @@
     if (typeof accessToken === 'string' && accessToken.match(/^Atza/)) {
         console.log("Amazon Access Token :" + accessToken);
         document.cookie = "amazon_Login_accessToken=" + accessToken + ";path=/;secure";
-        document.getElementById('access_token').value = accessToken;
+    }
+
+    // server側でエラー検出された場合など再度本画面に戻ってくる場合を想定し、あえてaccessTokenをcookieから取得する
+    let extractedAccessTokenResults = /(^|;\s*)amazon_Login_accessToken=([^;]+?)(;|$)/.exec(document.cookie);
+    if ( extractedAccessTokenResults ) {
+        document.getElementById('access_token').value = extractedAccessTokenResults[2];
     }
 
     let isAddressReady = false;

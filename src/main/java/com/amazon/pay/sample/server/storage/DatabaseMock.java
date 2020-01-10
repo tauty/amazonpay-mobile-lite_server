@@ -48,7 +48,7 @@ public class DatabaseMock {
     public static class Order implements Cloneable{
         public String myOrderId;
         public String myOrderStatus;
-        public String os;
+        public String env;
         public List<Item> items;
         public long price;
         public long priceTaxIncluded;
