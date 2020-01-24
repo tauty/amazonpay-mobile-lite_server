@@ -89,13 +89,13 @@
         }
     });
 
-    function openAmazonPay (token) {
+    function openAmazonPay (data) {
         // iOS: AmazonPayController#createOrderから受け取ったtokenを埋め込んで、WebViewController#viewDidLoadで登録された
         // CallbackのWebViewController#userContentControllerを起動する.
-        [( ${env} == 'ios'     ? 'webkit.messageHandlers.jsCallbackHandler.postMessage(token);' )]
+        [( ${env} == 'ios'     ? 'webkit.messageHandlers.jsCallbackHandler.postMessage(data);' )]
 
-        // PC: 通常の画面遷移
-        [( ${env} == 'browser' ? 'location.href = "../button?token=" + token;' )]
+        // Browser: 通常の画面遷移
+        [( ${env} == 'browser' ? 'location.href = "../button?token=" + JSON.parse(data).token;' )]
     }
 
 </script>

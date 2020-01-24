@@ -83,12 +83,12 @@ public class AmazonPayController {
      */
     @ResponseBody
     @PostMapping("/{env}/create_order_rest")
-    public String createOrderREST(@PathVariable String env, @RequestParam int hd8, @RequestParam int hd10) {
+    public Map<String, String> createOrderREST(@PathVariable String env, @RequestParam int hd8, @RequestParam int hd10) {
         System.out.println("[createOrderREST] " + env + ", " + hd8 + ", " + hd10);
         return doCreateOrder(env, hd8, hd10);
     }
 
-    private String doCreateOrder(String env, int hd8, int hd10) {
+    private Map<String, String> doCreateOrder(String env, int hd8, int hd10) {
 
         // 受注Objectの生成/更新
         Order order = new Order();
@@ -103,13 +103,18 @@ public class AmazonPayController {
         order.price = order.items.stream().mapToLong(item -> item.summary).sum();
         order.priceTaxIncluded = (long) (1.08 * order.price);
         order.myOrderStatus = "CREATED";
+        order.appKey = TokenUtil.createToken();
 
         // 受注Objectの保存
         DatabaseMock.storeOrder(order);
 
         // 受注Objectのcacheへの保存と、アクセス用tokenの返却
         // Note: tokenを用いる理由については、TokenUtilのJavadoc参照.
-        return TokenUtil.storeByToken(order);
+        String token = TokenUtil.storeByToken(order);
+        Map<String, String> map = new HashMap<>();
+        map.put("token", token);
+        map.put("appKey", order.appKey);
+        return map;
     }
 
     /**

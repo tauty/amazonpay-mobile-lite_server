@@ -49,6 +49,7 @@ public class DatabaseMock {
         public String myOrderId;
         public String myOrderStatus;
         public String env;
+        public String appKey;
         public List<Item> items;
         public long price;
         public long priceTaxIncluded;
