@@ -242,9 +242,8 @@ public class AmazonPayController {
                            @RequestParam String orderReferenceId, @RequestParam String furiganaSei,
                            @RequestParam String furiganaMei, @RequestParam String pwd,
                            Model model) throws AmazonServiceException {
-        if ("OK".equals(purchaseRest(token, accessToken, orderReferenceId, furiganaSei, furiganaMei, pwd))) {
-            Order order = TokenUtil.get(token);
-
+        Order order = TokenUtil.get(token);
+        if ("OK".equals(purchaseRest(token, accessToken, orderReferenceId, order.appKey, furiganaSei, furiganaMei, pwd))) {
             model.addAttribute("env", order.env);
             model.addAttribute("order", order);
 
@@ -270,12 +269,17 @@ public class AmazonPayController {
     @ResponseBody
     @PostMapping("/purchase_rest")
     public String purchaseRest(@RequestParam String token, @RequestParam String accessToken,
-                               @RequestParam String orderReferenceId, @RequestParam String furiganaSei,
+                               @RequestParam String orderReferenceId, @RequestParam String appKey, @RequestParam String furiganaSei,
                                @RequestParam String furiganaMei, @RequestParam String pwd) throws AmazonServiceException {
         System.out.println("[purchase] " + token + ", " + orderReferenceId + ", " + accessToken +
                 ", " + furiganaSei + ", " + furiganaMei + ", " + pwd);
 
         Order order = TokenUtil.get(token);
+
+        if(!order.appKey.equals(appKey)) {
+            throw new RuntimeException("Unknown access");
+        }
+
         order.orderReferenceId = orderReferenceId;
 
         //---------------------
